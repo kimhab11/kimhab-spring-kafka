@@ -1,5 +1,7 @@
-package com.kafka.kimhabspringkafka;
+package com.kafka.kimhabspringkafka.controller;
 
+import com.kafka.kimhabspringkafka.service.KafkaProducerService;
+import com.kafka.kimhabspringkafka.model.UserEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

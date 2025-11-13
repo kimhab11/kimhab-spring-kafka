@@ -1,4 +1,4 @@
-package com.kafka.kimhabspringkafka;
+package com.kafka.kimhabspringkafka.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
