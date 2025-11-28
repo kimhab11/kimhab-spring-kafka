@@ -3,5 +3,67 @@ spring:
     name: kimhab-spring-kafka
   kafka:
     bootstrap-servers: localhost:9092
+
+    # Producer Configuration
+    producer:
+      # Serialization
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      # 1 Reliability
+      acks: all # Wait for all replicas to acknowledge
+      retries: 2147483647  # Maximum retries (required for idempotence), unlimited retries
+      max-in-flight-requests-per-connection: 5 # can be left default for modern brokers, set to 1 for strict ordering under older brokers: 1
+      properties:
+        enable.idempotence: true  # Prevent duplicates, required for safe retries
+
+      # 2 Performance / throughput
+      compression-type: snappy # compression for faster throughput
+      batch-size: 32768 # 32 KB batch size for better throughput
+      linger-ms: 20 # Wait up to 20ms to fill batches
+
+      # 3 Timeout
+      request-timeout-ms: 30000 # 30 seconds timeout for request completion
+      delivery-timeout-ms: 120000  # 2 minutes total delivery timeout
+
+      buffer-memory: 33554432  # 32 MB buffer memory
+
+    # Consumer Configuration
+    consumer:
+      group-id: order-consumer-group # Group
+      auto-offset-reset: earliest
+      enable-auto-commit: false  #Disable auto-commit - Manual acknowledgment  # enable-auto-commit: true , not recommend critical data
+
+      # deserializers
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+      # Poll / fetch tuning
+      max-poll-records: 500
+      fetch-min-size: 1
+      heartbeat-interval: 3000
+
+      properties: #properties: block only for advanced Kafka configs not directly exposed by Spring Boot.
+        isolation:
+          level: read_committed
+        spring.json.trusted.packages: "*" # allow deserialization of your custom classes
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 10000
+
+    listener:
+      # override AckMode in Java config
+      ack-mode: manual # Manual Commit
+      concurrency: 3
 server:
   port: 8080
+
+
+logging:
+  level:
+    root: INFO
+    org.apache.kafka: info
+    org.springframework.kafka: info
+    com.kafka.kimhabspringkafka: debug
+
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger){cyan}.%clr(%M){yellow}.%clr(%L){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
