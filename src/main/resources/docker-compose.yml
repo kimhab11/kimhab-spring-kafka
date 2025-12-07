@@ -30,4 +30,4 @@ services:
     container_name: messaging-app-client
     image: kimhab11/vue-app
     ports:
-      - "5500:80"
+      - "5500:80" 

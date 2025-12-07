@@ -1,8 +1,9 @@
 package com.kafka.kimhabspringkafka.config;
 
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,9 +12,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.MicrometerProducerListener;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +30,15 @@ public class KafkaProducerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    @Value("${spring.kafka.properties.schema.registry.url}")
+    private String schemaRegistryUrl;
+
+    private final MeterRegistry meterRegistry;
+
+    public KafkaProducerConfig(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
@@ -35,6 +47,9 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+//        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+      //  configProps.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+     //   configProps.put("schema.registry.url", schemaRegistryUrl);
 
         // ===== IDEMPOTENCE CONFIGURATION =====
         // Enables idempotent producer to prevent duplicate messages
@@ -58,13 +73,20 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy"); // Faster Compression for network efficiency
         configProps.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);  // Buffer memory
         log.info("{ Producer Config properties: {}", configProps.keySet());
-        return new DefaultKafkaProducerFactory<>(configProps);
+
+        DefaultKafkaProducerFactory<String, Object> factory = new DefaultKafkaProducerFactory<>(configProps);
+       // factory.addListener(new MicrometerProducerListener<>(meterRegistry));
+        factory.addListener(new MicrometerProducerListener<>(meterRegistry, Collections.singletonList(new ImmutableTag("component","kafka-producer"))));
+
+        return factory;
     }
 
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
         log.info("{ Kafka Producer config");
-        return new KafkaTemplate<>(producerFactory());
+        KafkaTemplate<String, Object> template = new  KafkaTemplate<>(producerFactory());
+        template.setMicrometerEnabled(true);
+        return template;
 
     }
 }

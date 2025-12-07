@@ -1,59 +1,76 @@
 package com.kafka.kimhabspringkafka.metric;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.context.annotation.Configuration;
 
 @Slf4j
-@Service
-public class KafkaMetricsService {
+@Configuration
+public class KafkaMetricsService  {
+    private final Counter messagesProduced;
+    private final Counter messagesConsumed;
+    private final Counter messagesFailed;
+    private final Timer producerLatency;
+    private final Timer consumerProcessingTime;
 
-    private final AtomicLong messagesSent = new AtomicLong(0);
-    private final AtomicLong messagesFailed = new AtomicLong(0);
-    private final AtomicLong messagesRetried = new AtomicLong(0);
-    private final AtomicLong messagesSentToDLQ = new AtomicLong(0);
+    public KafkaMetricsService(MeterRegistry registry) {
+        this.messagesProduced = Counter.builder("kafka.messages.produced")
+                .description("Total messages produced")
+                .tag("service", "kafka-producer")
+                .tag("status", "success")
+               // .tag("topic", topic)
+                .register(registry);
 
-    public void incrementMessagesSent() {
-        messagesSent.incrementAndGet();
-        log.debug("Messages sent: {}", messagesSent.get());
+        this.messagesConsumed = Counter.builder("kafka.messages.consumed")
+                .description("Total messages consumed")
+                .tag("service", "kafka-consumer")
+                .register(registry);
+
+        this.messagesFailed = Counter.builder("kafka.messages.failed")
+                .description("Total messages failed")
+                .tag("service", "kafka-consumer")
+                .register(registry);
+
+        this.producerLatency = Timer.builder("kafka.producer.latency")
+                .description("Producer send latency")
+                .publishPercentiles(0.5, 0.95, 0.99)
+                .tag("status", "success")
+                .publishPercentileHistogram(true)
+                .register(registry);
+
+        this.consumerProcessingTime = Timer.builder("kafka.consumer.processing.time")
+                .description("Consumer processing time")
+                .register(registry);
     }
 
-    public void incrementMessagesFailed() {
-        messagesFailed.incrementAndGet();
-        log.warn("Messages failed: {}", messagesFailed.get());
+    public void recordMessageProduced() {
+        messagesProduced.increment();
     }
 
-    public void incrementMessagesRetried() {
-        messagesRetried.incrementAndGet();
-        log.info("Messages retried: {}", messagesRetried.get());
+    public void recordMessageConsumed() {
+        messagesConsumed.increment();
     }
 
-    public void incrementMessagesSentToDLQ() {
-        messagesSentToDLQ.incrementAndGet();
-        log.error("Messages sent to DLQ: {}", messagesSentToDLQ.get());
+    public void recordMessageFailed() {
+        messagesFailed.increment();
     }
 
-    public long getMessagesSent() {
-        return messagesSent.get();
+    public Timer.Sample startProducerTimer() {
+        return Timer.start();
     }
 
-    public long getMessagesFailed() {
-        return messagesFailed.get();
+    public void recordProducerLatency(Timer.Sample sample) {
+        sample.stop(producerLatency);
     }
 
-    public long getMessagesRetried() {
-        return messagesRetried.get();
+    public Timer.Sample startConsumerTimer() {
+        return Timer.start();
     }
 
-    public long getMessagesSentToDLQ() {
-        return messagesSentToDLQ.get();
+    public void recordConsumerProcessingTime(Timer.Sample sample) {
+        sample.stop(consumerProcessingTime);
     }
 
-    public void resetMetrics() {
-        messagesSent.set(0);
-        messagesFailed.set(0);
-        messagesRetried.set(0);
-        messagesSentToDLQ.set(0);
-        log.info("Metrics reset");
-    }
 }

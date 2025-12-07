@@ -3,6 +3,8 @@ spring:
     name: kimhab-spring-kafka
   kafka:
     bootstrap-servers: localhost:9092
+    properties:
+      schema.registry.url: http://localhost:8080
 
     # Producer Configuration
     producer:
@@ -39,9 +41,11 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
 
       # Poll / fetch tuning
-      max-poll-records: 500
+      max-poll-records: 500 # Process 500 messages per poll
       fetch-min-size: 1
       heartbeat-interval: 3000
+      fetch-min-byte: 1024  # Wait for at least 1KB
+      fetch-max-wait: 500 # Or wait max 500ms
 
       properties: #properties: block only for advanced Kafka configs not directly exposed by Spring Boot.
         isolation:
@@ -54,9 +58,36 @@ spring:
       # override AckMode in Java config
       ack-mode: manual # Manual Commit
       concurrency: 3
+
+    retry:
+      topic:
+        enabled: true
+        attempts: 3
+        delay: 1000
+        multiplier: 2.0
+        max-delay: 10000
 server:
   port: 8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: prd
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
 
 logging:
   level:
