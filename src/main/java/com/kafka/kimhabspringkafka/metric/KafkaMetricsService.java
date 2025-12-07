@@ -3,11 +3,13 @@ package com.kafka.kimhabspringkafka.metric;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
 @Slf4j
 @Configuration
+@Getter
 public class KafkaMetricsService  {
     private final Counter messagesProduced;
     private final Counter messagesConsumed;
