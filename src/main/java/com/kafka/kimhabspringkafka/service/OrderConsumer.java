@@ -6,10 +6,12 @@ import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -21,7 +23,6 @@ public class OrderConsumer {
 
     /**
      * Consumer for processing orders
-     * <p>
      * ┌─────────────────────────────────────────────────────┐
      * │ Kafka Topic: orders-topic                           │
      * │ Partition 0: [msg0][msg1][msg2][msg3][msg4]        │
@@ -30,6 +31,14 @@ public class OrderConsumer {
      * │                      (committed: 2)                  │
      * └─────────────────────────────────────────────────────┘
      */
+
+    @RetryableTopic(
+            attempts = "4", // total attempts including first delivery
+            backoff = @Backoff(delay = 2000, multiplier = 2.0),
+            fixedDelayTopicStrategy = org.springframework.kafka.retrytopic.FixedDelayStrategy.SINGLE_TOPIC,
+            dltTopicSuffix = ".DLT",
+            include = { Exception.class }
+    )
     @KafkaListener(
             topics = "orders-topic",
             groupId = "order-consumer-group",

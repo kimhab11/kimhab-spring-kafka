@@ -5,10 +5,7 @@ import com.kafka.kimhabspringkafka.dto.OrderEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
 
 import java.time.LocalDateTime;
 
@@ -31,17 +28,6 @@ public class DeadLetterQueueService {
                     .originalTopic("orders-topic")
                     .retryCount(3) // Number of retries attempted
                     .build();
-
-//            kafkaTemplate.send(DLQ_TOPIC, originalMessage.getOrderId(), dlqMessage)
-//                    .whenComplete((result, ex) -> {
-//                        if (ex == null) {
-//                            log.info("Message sent to DLQ successfully: {}",
-//                                    originalMessage.getOrderId());
-//                        } else {
-//                            log.error("Failed to send to DLQ: {}",
-//                                    originalMessage.getOrderId(), ex);
-//                        }
-//                    });
 
               // This version 2.7.* use with ListenableFuture
 //            ListenableFuture<SendResult<String, Object>> future = kafkaTemplate.send(DLQ_TOPIC, originalMessage.getOrderId(), dlqMessage);

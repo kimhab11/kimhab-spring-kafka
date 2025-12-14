@@ -2,6 +2,7 @@ package com.kafka.kimhabspringkafka.service;
 
 import com.kafka.kimhabspringkafka.dto.DLQMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -57,5 +58,15 @@ public class DeadLetterQueueConsumer {
         // TODO: Implement alerting (Slack, Email, PagerDuty, etc.)
         log.warn("{ Sending alert for failed order: {}",
                 dlqMessage.getOriginalMessage().getOrderId());
+    }
+
+
+    // another dlq test
+    @KafkaListener(topics = "orders.DLT", groupId = "orders-dlt-processor")
+    public void dltListen(ConsumerRecord<String, Object> record) {
+        // Inspect headers for original exception and attempt count
+        // Example: record.headers().lastHeader("kafka_retry_count")
+        // Log, persist, or trigger manual reprocessing workflow
+        System.out.println("DLT record: " + record.value());
     }
 }
