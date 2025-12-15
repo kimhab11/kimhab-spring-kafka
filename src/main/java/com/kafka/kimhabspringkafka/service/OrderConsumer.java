@@ -53,6 +53,7 @@ public class OrderConsumer {
     ) {
         Timer.Sample sample = metricsService.startConsumerTimer();
         try {
+            log.info("{ Thread: {}", Thread.currentThread().getName());
             log.info("{ Received order: {} from topic: {}, partition: {}, offset: {}",order.getOrderId(), topic, partition, offset);
 
             // Process the order

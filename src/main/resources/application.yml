@@ -57,7 +57,7 @@ spring:
     listener:
       # override AckMode in Java config
       ack-mode: manual # Manual Commit
-      concurrency: 3
+      concurrency: 3 # Number of concurrent threads per listener
 
     retry:
       topic:
@@ -68,6 +68,9 @@ spring:
         max-delay: 10000
 server:
   port: 8080
+app:
+  kafka:
+    topic: orders-topic
 
 management:
   endpoints:

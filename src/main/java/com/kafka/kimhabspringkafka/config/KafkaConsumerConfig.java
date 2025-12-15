@@ -82,14 +82,11 @@ public class KafkaConsumerConfig {
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(KafkaTemplate<String, Object> kafkaTemplate) {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerConfig());
-       // factory.setCommonErrorHandler(errorHandler());
-        factory.setConcurrency(3);
+        factory.setConcurrency(3);  // Set number of concurrent threads (should not exceed partition count)
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL); // Configure manual acknowledgment
         factory.getContainerProperties().setPollTimeout(3000);
-        // enable per-listener observation and timers
-        factory.getContainerProperties().setMicrometerEnabled(true);
-
-      //  factory.setRecordInterceptor
+        factory.getContainerProperties().setMicrometerEnabled(true);  // enable per-listener observation and timers
+        factory.setBatchListener(true); // // Batch listener (optional - for processing multiple records at once)
 
         // Configure error handler with DLT
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
@@ -107,6 +104,9 @@ public class KafkaConsumerConfig {
                 ValidationException.class,
                 DeserializationException.class
         );
+
+        factory.setCommonErrorHandler(errorHandler);
+
         log.info("{ Concurrent Kafka Listener config");
         return factory;
     }
