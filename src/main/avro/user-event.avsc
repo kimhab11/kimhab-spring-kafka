@@ -1,0 +1,36 @@
+// src/main/avro/user-event.avsc
+{
+  "namespace": "com.example.kafka.avro",
+  "type": "record",
+  "name": "UserEvent",
+  "fields": [
+    {
+      "name": "userId",
+      "type": "string"
+    },
+    {
+      "name": "eventType",
+      "type": {
+        "type": "enum",
+        "name": "EventType",
+        "symbols": ["USER_CREATED", "USER_UPDATED", "USER_DELETED"]
+      }
+    },
+    {
+      "name": "email",
+      "type": "string"
+    },
+    {
+      "name": "timestamp",
+      "type": "long"
+    },
+    {
+      "name": "metadata",
+      "type": ["null", {
+        "type": "map",
+        "values": "string"
+      }],
+      "default": null
+    }
+  ]
+}
