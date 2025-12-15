@@ -10,6 +10,7 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -45,6 +46,18 @@ public class KafkaHealthIndicator implements HealthIndicator {
                     .withDetail("kafka", "Unavailable")
                     .withDetail("error", e.getMessage())
                     .build();
+        }
+    }
+
+    // Get partition count for a topic
+    public int getPartitionCount(String topic) throws ExecutionException, InterruptedException {
+        try (AdminClient admin =  AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
+            return admin.describeTopics(java.util.Collections.singleton(topic))
+                    .allTopicNames()
+                    .get()
+                    .get(topic)
+                    .partitions()
+                    .size();
         }
     }
 }
