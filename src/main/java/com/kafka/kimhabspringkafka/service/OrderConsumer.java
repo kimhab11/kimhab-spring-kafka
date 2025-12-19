@@ -5,6 +5,7 @@ import com.kafka.kimhabspringkafka.dto.OrderEvent;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.Acknowledgment;
@@ -18,6 +19,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class OrderConsumer {
+
+    @Value("${spring.kafka.consumer.group-id}")
+    private String groupId;
 
     private final KafkaMetricsService metricsService;
 
@@ -40,9 +44,10 @@ public class OrderConsumer {
             include = { Exception.class }
     )
     @KafkaListener(
-            topics = "orders-topic",
-            groupId = "order-consumer-group",
-            containerFactory = "kafkaListenerContainerFactory"
+            topics = "orders-topic", // topic
+            groupId = "order-consumer-group", // groupId
+            containerFactory = "kafkaListenerContainerFactory" ,// listener config
+            concurrency = "3"  // Override YAML configuration if needed
     )
     public void consumeOrder(
             @Payload OrderEvent order,

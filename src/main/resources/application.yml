@@ -55,9 +55,12 @@ spring:
         session.timeout.ms: 10000
 
     listener:
-      # override AckMode in Java config
-      ack-mode: manual # Manual Commit
-      concurrency: 3 # Number of concurrent threads per listener
+      ack-mode: manual # Manual Commit # override AckMode in Java config
+      concurrency: 3 # Number of concurrent threads per listener,  default concurrency level for all listeners
+      poll-timeout: 3000 # Poll timeout tuning
+      idle-between-polls: 1000
+      idle-event-interval: 30
+      no-poll-threshold: 5.0
 
     retry:
       topic:

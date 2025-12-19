@@ -23,9 +23,11 @@ public class KafkaProducerService {
     private final KafkaMetricsService metricsService;
 
     private static final String MAIN_TOPIC = "orders-topic";
+
     /**
      * Send message with retry mechanism
      * Retries 3 times with exponential backoff
+     * Synchronous send with callback
      */
     @Retryable(
             value = {Exception.class},
@@ -36,6 +38,7 @@ public class KafkaProducerService {
                     maxDelay = 10000   // Max delay: 10 seconds
             )
     )
+
     public void sendOrder(OrderEvent order) {
         Timer.Sample sample = metricsService.startProducerTimer();
 
@@ -59,7 +62,7 @@ public class KafkaProducerService {
                         metricsService.recordMessageFailed();
                         metricsService.recordProducerLatency(sample);
 
-                        log.error("{ Failed to send order: {}", order.getOrderId(), ex);
+                        log.error("{ Failed to send order: [{}] due to {}", order, ex);
                         throw new RuntimeException("Kafka send failed", ex);
                     }
             );

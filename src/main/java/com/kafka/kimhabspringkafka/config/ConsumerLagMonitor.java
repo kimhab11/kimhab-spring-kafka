@@ -2,26 +2,16 @@ package com.kafka.kimhabspringkafka.config;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.ConsumerGroupListing;
-import org.apache.kafka.clients.admin.ListConsumerGroupsResult;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
-import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -29,8 +19,6 @@ import java.util.stream.Collectors;
 public class ConsumerLagMonitor {
     private final KafkaListenerEndpointRegistry registry;
     private final MeterRegistry meterRegistry;
-    private final KafkaAdmin kafkaAdmin;
-
 
     @Scheduled(fixedRate = 30000) // Every 30 seconds
     public void monitorConsumerLag() {
@@ -62,5 +50,4 @@ public class ConsumerLagMonitor {
             }
         }
     }
-
 }

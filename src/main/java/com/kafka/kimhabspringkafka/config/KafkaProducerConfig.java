@@ -19,8 +19,10 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,5 +95,22 @@ public class KafkaProducerConfig {
         template.setMicrometerEnabled(true);
         return template;
 
+    }
+
+    // Error Handling and Retry
+    @Bean
+    public DefaultErrorHandler errorHandler() {
+        // Retry 3 times with 1 second delay
+        BackOff fixedBackOff = new FixedBackOff(1000L, 3L);
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(
+                new DeadLetterPublishingRecoverer(kafkaTemplate()),
+                fixedBackOff
+        );
+
+        // Retry on these exceptions
+        errorHandler.addRetryableExceptions(IOException.class);
+        errorHandler.addNotRetryableExceptions(NullPointerException.class);
+
+        return errorHandler;
     }
 }
