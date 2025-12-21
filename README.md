@@ -13,6 +13,7 @@ Complete Spring Boot application demonstrating Kafka best practices for reliable
 ✅ **Health Checks** - Kafka cluster monitoring     
 ✅ **Performance & Observability** Use Micrometer for metrics (e.g., consumer lag, send latency).  
 ✅ **Concurrency** - Multiple consumer threads for scalability  
+✅ **Graceful Shutdown** - Clean application exit  
 ✅ **Docker Compose** - Easy local development
 
 ## Run Application
