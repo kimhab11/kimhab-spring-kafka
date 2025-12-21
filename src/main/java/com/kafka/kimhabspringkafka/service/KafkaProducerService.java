@@ -12,6 +12,7 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
+import javax.annotation.PreDestroy;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -136,5 +137,11 @@ public class KafkaProducerService {
             log.error("{ Failed to send order synchronously: {}", order.getOrderId(), e);
             throw e;
         }
+    }
+
+    @PreDestroy
+    public void onShutdown() {
+        System.out.println("Flushing and closing Kafka producer...");
+        kafkaTemplate.flush();  // ensure all messages are sent
     }
 }

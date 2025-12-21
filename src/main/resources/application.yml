@@ -1,8 +1,10 @@
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s  # The maximum time the app waits for active requests/tasks to finish (e.g., 30 seconds)
   application:
     name: kimhab-spring-kafka
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVER:localhost:9092}
     properties:
       schema.registry.url: http://localhost:8080
 
@@ -61,6 +63,12 @@ spring:
       idle-between-polls: 1000
       idle-event-interval: 30
       no-poll-threshold: 5.0
+      immediate-stop: false # Ensure the container waits for the current record to finish
+
+      # Graceful shutdown properties
+      graceful-shutdown:
+        enabled: true
+        timeout: 30s
 
     retry:
       topic:
@@ -71,6 +79,7 @@ spring:
         max-delay: 10000
 server:
   port: 8080
+  shutdown: graceful  # Enables graceful shutdown for the web server (Tomcat/Jetty)
 app:
   kafka:
     topic: orders-topic
@@ -79,7 +88,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,shutdown
   metrics:
     tags:
       application: ${spring.application.name}

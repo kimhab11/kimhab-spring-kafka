@@ -7,9 +7,10 @@ import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.stereotype.Component;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -19,33 +20,47 @@ import java.util.concurrent.TimeUnit;
 public class KafkaHealthIndicator implements HealthIndicator {
 
     private final KafkaAdmin kafkaAdmin;
-
+    private final KafkaListenerEndpointRegistry registry;
     @Override
     public Health health() {
-        try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
-            DescribeClusterOptions options = new DescribeClusterOptions()
-                    .timeoutMs(5000);
-            DescribeClusterResult clusterResult = adminClient.describeCluster();
+        boolean allRunning = true;
 
-            adminClient.describeCluster(options)
-                    .clusterId()
-                    .get(5, TimeUnit.SECONDS);
+        for (MessageListenerContainer container : registry.getListenerContainers()) {
+            if (!container.isRunning()) {
+                allRunning = false;
+                break;
+            }
+        }
 
-            String clusterId = clusterResult.clusterId().get(5, TimeUnit.SECONDS);
-            int nodeCount = clusterResult.nodes().get(5, TimeUnit.SECONDS).size();
+        if (allRunning) {
+            try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
+                DescribeClusterOptions options = new DescribeClusterOptions()
+                        .timeoutMs(5000);
+                DescribeClusterResult clusterResult = adminClient.describeCluster();
 
-            return Health.up()
-                    .withDetail("kafka", "Connected")
-                    .withDetail("clusterId", clusterId)
-                    .withDetail("brokerCount", nodeCount)
-                    .build();
+                adminClient.describeCluster(options)
+                        .clusterId()
+                        .get(5, TimeUnit.SECONDS);
 
-        } catch (Exception e) {
-            log.error("Kafka health check failed", e);
-            return Health.down(e)
-                    .withDetail("kafka", "Unavailable")
-                    .withDetail("error", e.getMessage())
-                    .build();
+                String clusterId = clusterResult.clusterId().get(5, TimeUnit.SECONDS);
+                int nodeCount = clusterResult.nodes().get(5, TimeUnit.SECONDS).size();
+
+                return Health.up()
+                        .withDetail("kafka", "Connected")
+                        .withDetail("clusterId", clusterId)
+                        .withDetail("brokerCount", nodeCount)
+                        .build();
+
+            } catch (Exception e) {
+                log.error("Kafka health check failed", e);
+                return Health.down(e)
+                        .withDetail("kafka", "Unavailable")
+                        .withDetail("error", e.getMessage())
+                        .build();
+            }
+
+        } else {
+            return Health.down().withDetail("message", "Some Kafka listeners are not running").build();
         }
     }
 

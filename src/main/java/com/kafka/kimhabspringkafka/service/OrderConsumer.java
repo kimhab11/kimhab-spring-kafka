@@ -1,11 +1,12 @@
 package com.kafka.kimhabspringkafka.service;
 
-import com.kafka.kimhabspringkafka.metric.KafkaMetricsService;
 import com.kafka.kimhabspringkafka.dto.OrderEvent;
+import com.kafka.kimhabspringkafka.metric.KafkaMetricsService;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.Acknowledgment;
@@ -14,15 +15,14 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OrderConsumer {
+public class OrderConsumer implements ApplicationListener<ContextClosedEvent> {
 
-    @Value("${spring.kafka.consumer.group-id}")
-    private String groupId;
-
+    private final AtomicBoolean shutdownFlag = new AtomicBoolean(false);
     private final KafkaMetricsService metricsService;
 
     /**
@@ -45,17 +45,24 @@ public class OrderConsumer {
     )
     @KafkaListener(
             topics = "orders-topic", // topic
-            groupId = "order-consumer-group", // groupId
+            groupId = "${spring.kafka.consumer.group-id}", // groupId
             containerFactory = "kafkaListenerContainerFactory" ,// listener config
             concurrency = "3"  // Override YAML configuration if needed
     )
     public void consumeOrder(
+         //   ConsumerRecord<String, String> record,
             @Payload OrderEvent order,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
             @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition,  // @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition, (Spring Kafka 3.x).
             @Header(KafkaHeaders.OFFSET) long offset,
-            Acknowledgment acknowledgment
-    ) {
+            Acknowledgment acknowledgment ) {
+
+        // Check shutdown flag before processing
+        if (shutdownFlag.get()) {
+            log.info("Shutdown initiated, skipping message processing");
+            return;
+        }
+
         Timer.Sample sample = metricsService.startConsumerTimer();
         try {
             log.info("{ Thread: {}", Thread.currentThread().getName());
@@ -104,6 +111,20 @@ public class OrderConsumer {
         } catch (Exception e){
             log.error("{ Failed to process order: {}", order.getOrderId(), e);
             // Optional: Send to DLQ after X retries
+        }
+    }
+
+    @Override
+    public void onApplicationEvent(ContextClosedEvent event) {
+        log.info("Application shutdown detected. Setting shutdown flag...");
+        shutdownFlag.set(true);
+
+        // Wait for in-progress messages to complete
+        try {
+            Thread.sleep(5000); // Give some time for current processing to complete
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Shutdown wait interrupted", e);
         }
     }
 }

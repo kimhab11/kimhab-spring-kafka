@@ -90,7 +90,7 @@ public class KafkaConsumerConfig {
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);// Use manual ack so we can acknowledge after async processing completes
         factory.getContainerProperties().setPollTimeout(3000); // Poll timeout tuning
         factory.getContainerProperties().setMicrometerEnabled(true);  // enable per-listener observation and timers
-        factory.setBatchListener(true); // // Batch listener (optional - for processing multiple records at once)
+      //  factory.setBatchListener(true); // Batch listener (optional - for processing multiple records at once), please change @paylaod consumer accept batch too
 
         // Configure error handler with DLT
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
@@ -112,8 +112,8 @@ public class KafkaConsumerConfig {
         );
         // Log failures
         errorHandler.setLogLevel(KafkaException.Level.WARN);
-
         factory.setCommonErrorHandler(errorHandler);
+        factory.getContainerProperties().setShutdownTimeout(3000l); //30 seconds
         log.info("{ Concurrent Kafka Listener config");
         return factory;
     }
