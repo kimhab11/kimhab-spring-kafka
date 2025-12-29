@@ -17,7 +17,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 @Slf4j
 public class TransactionController {
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, Transaction> kafkaTemplate;
     private final ObjectMapper mapper = new ObjectMapper();
 
     @PostMapping
@@ -33,9 +33,9 @@ public class TransactionController {
                     "USER_" + i,
                     amount, LocalDateTime.now().toString());
 
-            String txnJson = mapper.writeValueAsString(txn);
+           // String txnJson = mapper.writeValueAsString(txn);
 
-            kafkaTemplate.send("transactions", transactionId, txnJson);
+            kafkaTemplate.send("transactions", transactionId, txn);
             log.info("👍 Sent Trx: [{}]", txn );
         }
 

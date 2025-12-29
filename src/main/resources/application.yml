@@ -5,7 +5,10 @@ spring:
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    properties:
+      spring.json.add.type.headers: false # optional, prevents type headers in messages
+
     streams:
       application-id: kimhab-spring-kafka-stream-demo
       properties:
@@ -13,6 +16,8 @@ spring:
           key:
             serde: org.apache.kafka.common.serialization.Serdes$StringSerde
           value:
-            serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+            serde: com.kafka.kimhabspringkafka.serde.TransactionSerde
+
+
 server:
   port: 8080
