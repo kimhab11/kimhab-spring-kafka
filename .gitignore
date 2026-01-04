@@ -36,3 +36,4 @@ out/
 
 ### VS Code ###
 .vscode/
+/src/main/resources/templates/kimhab-spring-kafka-stream-demo/
