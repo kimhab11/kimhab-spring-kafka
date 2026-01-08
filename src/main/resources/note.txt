@@ -1,0 +1,4 @@
+to be considered next test:
+
+ - Security Implement SSL/SASL for encryption and authentication. Use Access Control Lists (ACLs) for authorization. (no need)
+ - Message Schema Use Avro or Protobuf with Confluent Schema Registry for data consistency and evolution.
